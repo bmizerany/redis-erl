@@ -1,0 +1,1 @@
+rebar compile && escript t/001_redis_slurp_test.t
