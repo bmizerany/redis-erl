@@ -33,6 +33,18 @@ main(_) ->
     "test bulk reply"
   ),
 
+  etap:is(
+    redis:q([get, "notakey"]),
+    {ok, null},
+    "test bulk reply with -1 length"
+  ),
+
+  etap:is(
+    redis:q([keys, "notamatch"]),
+    {ok, <<>>},
+    "test bulk reply with 0 length"
+  ),
+
   redis:q([set, "abc", "123"]),
   etap:is(
     redis:q([mget, "foo", "abc"]),

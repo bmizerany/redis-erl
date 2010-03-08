@@ -62,6 +62,8 @@ read_resp(Socket) ->
 
 read_body(_Socket, -1) ->
   {ok, null};
+read_body(_Socket, 0) ->
+  {ok, <<>>};
 read_body(Socket, Size) ->
   inet:setopts(Socket, [{packet, raw}]),
   gen_tcp:recv(Socket, Size).
