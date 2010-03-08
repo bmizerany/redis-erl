@@ -23,7 +23,7 @@
 ]).
 
 %% --------------------
-%% Publi API
+%% Public API
 %% --------------------
 
 connect(PropList) ->
