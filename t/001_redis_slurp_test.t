@@ -12,7 +12,13 @@ main(_) ->
   etap:is(
     redis:q([flushdb]),
     {ok, <<"OK">>},
-    "flushdb"
+    "+ status reply"
+  ),
+
+  etap:is(
+    redis:q([foobar]),
+    {error, <<"ERR unknown command 'FOOBAR'">>},
+    "- status reply"
   ),
 
   etap:is(
