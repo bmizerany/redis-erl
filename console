@@ -1,4 +1,4 @@
 #!/bin/sh
 set -e
 rebar compile
-erl -pa ebin/ -boot start_sasl -eval 'redis:connect("127.0.0.1", 6660)'
+erl -pa ebin/ -boot start_sasl -eval 'redis:connect([{port, 6660}])'

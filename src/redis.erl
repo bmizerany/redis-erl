@@ -9,22 +9,34 @@
 ]).
 
 -export([
-  connect/2,
+  connect/1,
   q/1,
   keys/1
 ]).
 
 -define(NL, "\r\n").
+-define(DEFAULTS, [
+  {ip, "127.0.0.1"},
+  {port, 6379},
+  {db, 0},
+  {pass, <<>>}
+]).
 
 %% --------------------
 %% Publi API
 %% --------------------
 
-connect(Ip, Port) ->
-  Result = gen_server:start_link({local, ?MODULE}, ?MODULE, {Ip, Port}, []),
+connect(PropList) ->
+  PropList1 = set_defaults(?DEFAULTS, PropList),
+  Result = gen_server:start_link({local, ?MODULE}, ?MODULE, PropList1, []),
   case Result of
     {ok, _Pid} ->
-      ok;
+      case q([auth, proplists:get_value(pass, PropList1)]) of
+        {ok, _} ->
+          q([select, proplists:get_value(db, PropList1)]);
+        Error ->
+          Error
+      end;
     Error ->
       Error
   end.
@@ -33,9 +45,9 @@ q(Parts) ->
   gen_server:call(?MODULE, {q, Parts}).
 
 
-%% --------------------
+%%
 %% Generic Sugar
-%% --------------------
+%%
 
 keys(Pat) ->
   {ok, Data} = q([keys, Pat]),
@@ -44,6 +56,17 @@ keys(Pat) ->
 %% --------------------
 %% Private API
 %% --------------------
+
+set_default({Prop, Value}, PropList) ->
+  case proplists:is_defined(Prop, PropList) of
+    true ->
+      PropList;
+    false ->
+      [{Prop, Value} | PropList]
+  end.
+
+set_defaults(Defaults, PropList) ->
+  lists:foldl(fun set_default/2, PropList, Defaults).
 
 strip(B) when is_binary(B) ->
   S = size(B) - 2,
@@ -106,8 +129,11 @@ to_part(L) when is_list(L) ->
 %% gen_server
 %% ----------
 
-init({Ip, Port}) ->
+init(Opts) ->
+  Ip = proplists:get_value(ip, Opts),
+  Port = proplists:get_value(port, Opts),
   SocketOpts = [binary, {packet, line}, {active, false}, {recbuf, 1024}],
+  io:format("opts: ~p ~p ~p ~p~n", [Opts, Ip, Port, SocketOpts]),
   Result = gen_tcp:connect(Ip, Port, SocketOpts),
   case Result of
     {ok, Socket} ->
@@ -118,6 +144,7 @@ init({Ip, Port}) ->
 
 handle_call({q, Parts}, _From, Socket) ->
   ToSend = build_request(Parts),
+  io:format("SENDING:~n~p~n", [ToSend]),
   Result = case gen_tcp:send(Socket, ToSend) of
     ok ->
       read_resp(Socket);

@@ -5,7 +5,7 @@
 main(_) ->
 
   %% Devil Redis
-  redis:connect("127.0.0.1", 6660),
+  redis:connect([{port, 6660}]),
   etap:plan(unknown),
 
   %% Test flushdb first to ensure we have a clean db
