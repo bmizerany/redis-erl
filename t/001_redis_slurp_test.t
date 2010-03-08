@@ -52,4 +52,10 @@ main(_) ->
     "multi bulk reply"
   ),
 
+  etap:is(
+    redis:keys("*"),
+    [<<"foo">>, <<"abc">>],
+    "keys sugar"
+  ),
+
   ok.

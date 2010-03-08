@@ -10,14 +10,15 @@
 
 -export([
   connect/2,
-  q/1
+  q/1,
+  keys/1
 ]).
 
 -define(NL, "\r\n").
 
-%% ----------
+%% --------------------
 %% Publi API
-%% ----------
+%% --------------------
 
 connect(Ip, Port) ->
   Result = gen_server:start_link({local, ?MODULE}, ?MODULE, {Ip, Port}, []),
@@ -29,9 +30,20 @@ connect(Ip, Port) ->
   end.
 
 q(Parts) ->
-  gen_server:call(?MODULE, {request, Parts}).
+  gen_server:call(?MODULE, {q, Parts}).
 
+
+%% --------------------
+%% Generic Sugar
+%% --------------------
+
+keys(Pat) ->
+  {ok, Data} = q([keys, Pat]),
+  re:split(Data, " ").
+
+%% --------------------
 %% Private API
+%% --------------------
 
 strip(B) when is_binary(B) ->
   S = size(B) - 2,
@@ -104,7 +116,7 @@ init({Ip, Port}) ->
       {stop, Error}
   end.
 
-handle_call({request, Parts}, _From, Socket) ->
+handle_call({q, Parts}, _From, Socket) ->
   ToSend = build_request(Parts),
   Result = case gen_tcp:send(Socket, ToSend) of
     ok ->
