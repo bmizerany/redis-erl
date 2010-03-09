@@ -125,9 +125,9 @@ to_part(L) when is_list(L) ->
   L.
 
 
-%% ----------
+%% --------------------
 %% gen_server
-%% ----------
+%% --------------------
 
 init(Opts) ->
   Ip = proplists:get_value(ip, Opts),
