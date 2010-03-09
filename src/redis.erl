@@ -75,24 +75,28 @@ strip(B) when is_binary(B) ->
 
 read_resp(Socket) ->
   inet:setopts(Socket, [{packet, line}]),
-  {ok, Line} = gen_tcp:recv(Socket, 0),
-  case Line of
-    <<"*", Rest/binary>> ->
-      Count = list_to_integer(binary_to_list(strip(Rest))),
-      read_multi_bulk(Socket, Count, []);
-    <<"+", Rest/binary>> ->
-      {ok, strip(Rest)};
-    <<"-", Rest/binary>> ->
-      {error, strip(Rest)};
-    <<":", Size/binary>> ->
-      {ok, list_to_integer(binary_to_list(strip(Size)))};
-    <<"$", Size/binary>> ->
-      Size1 = list_to_integer(binary_to_list(strip(Size))),
-      read_body(Socket, Size1);
-    <<"\r\n">> ->
-      read_resp(Socket);
-    Uknown ->
-      {unknown, Uknown}
+  case gen_tcp:recv(Socket, 0) of
+    {ok, Line} ->
+      case Line of
+        <<"*", Rest/binary>> ->
+          Count = list_to_integer(binary_to_list(strip(Rest))),
+          read_multi_bulk(Socket, Count, []);
+        <<"+", Rest/binary>> ->
+          {ok, strip(Rest)};
+        <<"-", Rest/binary>> ->
+          {error, strip(Rest)};
+        <<":", Size/binary>> ->
+          {ok, list_to_integer(binary_to_list(strip(Size)))};
+        <<"$", Size/binary>> ->
+          Size1 = list_to_integer(binary_to_list(strip(Size))),
+          read_body(Socket, Size1);
+        <<"\r\n">> ->
+          read_resp(Socket);
+        Uknown ->
+          {unknown, Uknown}
+      end;
+    Error ->
+      Error
   end.
 
 read_body(_Socket, -1) ->
