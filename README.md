@@ -50,21 +50,74 @@
 
 ## Breakdance/Breakdown
 
-  `redis:q/1` converts each `term()` of a the input `list()` into a
-  `list()` (i.e. `[list(), list(), ...]`).
+    redis:connect(Options) -> ok | {error, Reason}
 
-  `atom()`s are assumed to be keywords and converted to a `list()`
-  then sent to `string:to_upper/1`.
+      Types:
 
-  for instance, the amazing [SORT](http://code.google.com/p/redis/wiki/SortCommand) command:
+        Options = [Opt]
+        Opt = {atom(), Value}
+        Value = term()
+
+      Connects to redis server
+
+      The available options are:
+
+      {ip, Ip}
+
+        If the host has several network interfaces, this option
+        specifies which one to use.  Default is "127.0.0.1".
+
+      {port, Port}
+
+        Specify which local port number to use.  Default is 6379.
+
+      {pass, Pass}
+
+        Specify to password to auth with upon a successful connect.
+        Default is <<>>.
+
+      {db, DbIndex}
+
+        Sepcify the db to use.  Default is 0.
+
+
+    redis:q(Parts) -> {ok, binary()} | {ok, int()} | {error, binary()}
+
+      Types
+
+        Parts = [Part]
+
+          The sections, in order, of the command to be executed
+
+        Part = atom() | binary() | list()
+
+          A section of a redis command
+
+          NOTE:  An atom() is converted to an uppercase list().
+
+      Tell redis to execute a command.
+
+    redis:keys(Pat) -> [binary()]
+
+      Types
+
+        Pat = list()
+
+          The pattern to search for keys on
+
+      See: http://code.google.com/p/redis/wiki/KeysCommand
+
+## In motion
+
+The amazing [SORT](http://code.google.com/p/redis/wiki/SortCommand) command:
 
     redis:q([sort, "foo", by, "bar:*"]).
 
-  is converted to:
+    is converted to:
 
     ["SORT", "foo", "BY", "bar:*"]
 
-  which is then compiled to
+    which is then compiled to
 
     *4
     $4
@@ -76,7 +129,7 @@
     $5
     bar:*
 
-  and sent over the wire to redis.
+    and sent over the wire to redis.
 
 ## Sugar
 
@@ -91,11 +144,12 @@ There is currently only one sugar command, `redis:keys/1`
 ## On Sugar commands and future additions too
 
 Sugar commands must return an easy to use `term()` that resembles
-the closest erlang-esq expression of it's form.
+the closest erlang-esq expression of it's redis form.
 
 I'm currently on the fence about how these commands look,
-but thanks to the multi-bulk-request protocol redis uses,
-it's simple to use `redis:q/1` function for *all* commands.
+and what they return, but thanks to the multi-bulk-request
+protocol redis uses, it's simple to use `redis:q/1` function
+for *all* commands.
 
 How can you get your Sugar functions in?  See the next section.
 
