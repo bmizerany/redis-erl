@@ -23,7 +23,7 @@
 
 *with [rebar](http://bitbucket.org/basho/rebar)*
 
-  	$ rebar compile
+    $ rebar compile
 
 ## Raw examples
 
