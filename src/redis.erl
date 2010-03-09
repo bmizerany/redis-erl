@@ -1,13 +1,14 @@
 -module(redis).
 -behaviour(gen_server).
 
-%% gen_server exports
+%% gen_server callbacks
 -export([
   init/1,
   handle_call/3, handle_cast/2, handle_info/2,
   terminate/2, code_change/3
 ]).
 
+%% api callbacks
 -export([
   connect/1,
   q/1,
@@ -22,10 +23,9 @@
   {pass, <<>>}
 ]).
 
-%% --------------------
-%% Public API
-%% --------------------
-
+%%====================================================================
+%% api callbacks
+%%====================================================================
 connect(PropList) ->
   PropList1 = set_defaults(?DEFAULTS, PropList),
   Result = gen_server:start_link({local, ?MODULE}, ?MODULE, PropList1, []),
@@ -44,19 +44,93 @@ connect(PropList) ->
 q(Parts) ->
   gen_server:call(?MODULE, {q, Parts}).
 
-
 %%
 %% Generic Sugar
 %%
-
 keys(Pat) ->
   {ok, Data} = q([keys, Pat]),
   re:split(Data, " ").
 
-%% --------------------
-%% Private API
-%% --------------------
+%%====================================================================
+%% gen_server callbacks
+%%====================================================================
 
+%%--------------------------------------------------------------------
+%% Function: init(Args) -> {ok, State} |
+%%                         {ok, State, Timeout} |
+%%                         ignore               |
+%%                         {stop, Reason}
+%% Description: Initiates the server
+%%--------------------------------------------------------------------
+init(Opts) ->
+  Ip = proplists:get_value(ip, Opts),
+  Port = proplists:get_value(port, Opts),
+  SocketOpts = [binary, {packet, line}, {active, false}, {recbuf, 1024}],
+  Result = gen_tcp:connect(Ip, Port, SocketOpts),
+  case Result of
+    {ok, Socket} ->
+      {ok, Socket};
+    Error ->
+      {stop, Error}
+  end.
+
+%%--------------------------------------------------------------------
+%% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
+%%                                      {reply, Reply, State, Timeout} |
+%%                                      {noreply, State} |
+%%                                      {noreply, State, Timeout} |
+%%                                      {stop, Reason, Reply, State} |
+%%                                      {stop, Reason, State}
+%% Description: Handling call messages
+%%--------------------------------------------------------------------
+handle_call({q, Parts}, _From, Socket) ->
+  ToSend = build_request(Parts),
+  Result = case gen_tcp:send(Socket, ToSend) of
+    ok ->
+      read_resp(Socket);
+    Error ->
+      Error
+  end,
+  {reply, Result, Socket}.
+
+%%--------------------------------------------------------------------
+%% Function: handle_cast(Msg, State) -> {noreply, State} |
+%%                                      {noreply, State, Timeout} |
+%%                                      {stop, Reason, State}
+%% Description: Handling cast messages
+%%--------------------------------------------------------------------
+handle_cast(_Msg, State) ->
+  {noreply, State}.
+
+%%--------------------------------------------------------------------
+%% Function: handle_info(Info, State) -> {noreply, State} |
+%%                                       {noreply, State, Timeout} |
+%%                                       {stop, Reason, State}
+%% Description: Handling all non call/cast messages
+%%--------------------------------------------------------------------
+handle_info(_Info, State) ->
+  {noreply, State}.
+
+%%--------------------------------------------------------------------
+%% Function: terminate(Reason, State) -> void()
+%% Description: This function is called by a gen_server when it is about to
+%% terminate. It should be the opposite of Module:init/1 and do any necessary
+%% cleaning up. When it returns, the gen_server terminates with Reason.
+%% The return value is ignored.
+%%--------------------------------------------------------------------
+terminate(_Reason, _State) ->
+  ok.
+
+%%--------------------------------------------------------------------
+%% Func: code_change(OldVsn, State, Extra) -> {ok, NewState}
+%% Description: Convert process state when code is changed
+%%--------------------------------------------------------------------
+code_change(_OldVsn, State, _Extra) ->
+  {ok, State}.
+
+%%--------------------------------------------------------------------
+%%% Internal functions
+%%--------------------------------------------------------------------
 set_default({Prop, Value}, PropList) ->
   case proplists:is_defined(Prop, PropList) of
     true ->
@@ -127,35 +201,3 @@ to_part(I) when is_integer(I) ->
   integer_to_list(I);
 to_part(L) when is_list(L) ->
   L.
-
-
-%% --------------------
-%% gen_server
-%% --------------------
-
-init(Opts) ->
-  Ip = proplists:get_value(ip, Opts),
-  Port = proplists:get_value(port, Opts),
-  SocketOpts = [binary, {packet, line}, {active, false}, {recbuf, 1024}],
-  Result = gen_tcp:connect(Ip, Port, SocketOpts),
-  case Result of
-    {ok, Socket} ->
-      {ok, Socket};
-    Error ->
-      {stop, Error}
-  end.
-
-handle_call({q, Parts}, _From, Socket) ->
-  ToSend = build_request(Parts),
-  Result = case gen_tcp:send(Socket, ToSend) of
-    ok ->
-      read_resp(Socket);
-    Error ->
-      Error
-  end,
-  {reply, Result, Socket}.
-
-handle_cast(_, _) -> ok.
-handle_info(_, _) -> ok.
-terminate(_, _) -> ok.
-code_change(_, _, _) -> ok.

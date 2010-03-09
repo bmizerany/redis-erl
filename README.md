@@ -21,9 +21,9 @@
 
     $ epm install bmizerany/redis-erl
 
-*without epm*
+*without [rebar](http://bitbucket.org/basho/rebar)*
 
-  add this repo to your `include` directory.
+  	$ rebar compile
 
 ## Raw examples
 
