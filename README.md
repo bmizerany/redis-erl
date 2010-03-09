@@ -103,9 +103,9 @@ How can you get your Sugar functions in?  See the next section.
 
 I'm very open to patches!  Help is greatly appreciated.
 
-  # Fork this repo
-  # Add an issue to this repos issues with a link to you commit/compare-view
-  # I'll get to it as soon as possible
+- Fork this repo
+- Add an issue to this repos issues with a link to you commit/compare-view
+- I'll get to it as soon as possible
 
 ## LICENSE
 Copyright (c) 2010 Blake Mizerany
