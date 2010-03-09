@@ -81,7 +81,7 @@
 ## Sugar
 
 Sugar functions enable you to avoid the slightly less attractive
-raw redis:q/1 command.
+raw `redis:q/1` command.
 
 There is currently only one sugar command, `redis:keys/1`
 
@@ -95,7 +95,7 @@ the closest erlang-esq expression of it's form.
 
 I'm currently on the fence about how these commands look,
 but thanks to the multi-bulk-request protocol redis uses,
-it's simple to use redis:q/1 function for *all* commands.
+it's simple to use `redis:q/1` function for *all* commands.
 
 How can you get your Sugar functions in?  See the next section.
 
