@@ -133,7 +133,6 @@ init(Opts) ->
   Ip = proplists:get_value(ip, Opts),
   Port = proplists:get_value(port, Opts),
   SocketOpts = [binary, {packet, line}, {active, false}, {recbuf, 1024}],
-  io:format("opts: ~p ~p ~p ~p~n", [Opts, Ip, Port, SocketOpts]),
   Result = gen_tcp:connect(Ip, Port, SocketOpts),
   case Result of
     {ok, Socket} ->
@@ -144,7 +143,6 @@ init(Opts) ->
 
 handle_call({q, Parts}, _From, Socket) ->
   ToSend = build_request(Parts),
-  io:format("SENDING:~n~p~n", [ToSend]),
   Result = case gen_tcp:send(Socket, ToSend) of
     ok ->
       read_resp(Socket);
