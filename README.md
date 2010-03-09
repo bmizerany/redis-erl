@@ -39,6 +39,34 @@ or add this repo to your `include` directory.
     {ok,1}
     10>
 
+## Breakdance/Breakdown
+
+  `redis:q/1` converts each `term()` of a the input `list()` into
+  a list.  `atom()`s are special cased; they are converted to an
+  uppercase list becuase they are assumed to be keywords.
+
+  For instances:
+
+    redis:q([sort, "foo", by, "bar:*"]).
+
+  is converted to:
+
+    ["SORT", "foo", "BY", "bar:*"]
+
+  which is the converted to
+
+    *4
+    $4
+    SORT
+    $3
+    foo
+    $2
+    BY
+    $5
+    bar:*
+
+and sent over the wire to redis
+
 ## Sugar
 
 Sugar functions enable you to avoid the slightly less attractive
@@ -52,7 +80,13 @@ There is currently only one sugar command, `redis:keys/1`
 ## On Sugar commands and additions
 
 Sugar commands must return an easy to use term() that resembles
-the closest erlang-esque expression of it's form.
+the closest erlang-esq expression of it's form.
+
+I'm currently on the fence about how these commands look,
+but thanks to the multi-bulk-request protocol redis uses,
+it's simple to use redis:q/1 function for *all* commands.
+
+How can you get your Sugar functions in?  See the next section.
 
 ## Contribute
 
@@ -61,8 +95,6 @@ I'm very open to patches!  Help is greatly appreciated.
   # Fork this repo
   # Add an issue to this repos issues with a link to you commit/compare-view
   # I'll get to it as soon as possible
-
-### Breakdown
 
 ## LICENSE
 Copyright (c) 2010 Blake Mizerany
