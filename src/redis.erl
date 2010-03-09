@@ -14,7 +14,7 @@
   keys/1
 ]).
 
--define(NL, "\r\n").
+-define(NL, <<"\r\n">>).
 -define(DEFAULTS, [
   {ip, "127.0.0.1"},
   {port, 6379},
@@ -69,7 +69,7 @@ set_defaults(Defaults, PropList) ->
   lists:foldl(fun set_default/2, PropList, Defaults).
 
 strip(B) when is_binary(B) ->
-  S = size(B) - 2,
+  S = size(B) - size(?NL),
   <<B1:S/binary, _/binary>> = B,
   B1.
 
