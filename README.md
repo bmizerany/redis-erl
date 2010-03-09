@@ -2,9 +2,16 @@
 
 ## Synopsis
 
-   minimalistic redis client for erlang
+  minimalistic [redis](http://code.google.com/p/redis/) client for erlang
+
+## Overview
+
+  redis-erl is a redis client implementation that only
+  uses redis's [multi bulk command protocol](http://code.google.com/p/redis/wiki/ProtocolSpecification).
 
 ## Install
+
+*with [epm](http://github.com/JacobVorreuter/epm)*
 
   ensure you have the latest version of epm:
 
@@ -14,7 +21,9 @@
 
     $ epm install bmizerany/redis-erl
 
-or add this repo to your `include` directory.
+*without epm*
+
+  add this repo to your `include` directory.
 
 ## Raw examples
 
@@ -41,11 +50,13 @@ or add this repo to your `include` directory.
 
 ## Breakdance/Breakdown
 
-  `redis:q/1` converts each `term()` of a the input `list()` into
-  a list.  `atom()`s are special cased; they are converted to an
-  uppercase list becuase they are assumed to be keywords.
+  `redis:q/1` converts each `term()` of a the input `list()` into a
+  `list()` (i.e. `[list(), list(), ...]`).
 
-  For instances:
+  `atom()`s are assumed to be keywords and converted to a `list()`
+  then sent to `string:to_upper/1`.
+
+  for instance, the amazing [SORT](http://code.google.com/p/redis/wiki/SortCommand) command:
 
     redis:q([sort, "foo", by, "bar:*"]).
 
@@ -53,7 +64,7 @@ or add this repo to your `include` directory.
 
     ["SORT", "foo", "BY", "bar:*"]
 
-  which is the converted to
+  which is then compiled to
 
     *4
     $4
@@ -65,7 +76,7 @@ or add this repo to your `include` directory.
     $5
     bar:*
 
-and sent over the wire to redis
+  and sent over the wire to redis.
 
 ## Sugar
 
@@ -77,9 +88,9 @@ There is currently only one sugar command, `redis:keys/1`
     1> redis:keys("f*").
     [<<"foo">>, <<"funk">>]
 
-## On Sugar commands and additions
+## On Sugar commands and future additions too
 
-Sugar commands must return an easy to use term() that resembles
+Sugar commands must return an easy to use `term()` that resembles
 the closest erlang-esq expression of it's form.
 
 I'm currently on the fence about how these commands look,
