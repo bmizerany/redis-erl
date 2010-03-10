@@ -10,7 +10,7 @@
 
 %% api callbacks
 -export([
-  connect/1,
+  start_link/1,
   q/1,
   keys/1
 ]).
@@ -26,7 +26,7 @@
 %%====================================================================
 %% api callbacks
 %%====================================================================
-connect(PropList) ->
+start_link(PropList) ->
   PropList1 = set_defaults(?DEFAULTS, PropList),
   Result = gen_server:start_link({local, ?MODULE}, ?MODULE, PropList1, []),
   case Result of
