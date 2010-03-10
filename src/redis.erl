@@ -16,30 +16,20 @@
 ]).
 
 -define(NL, <<"\r\n">>).
--define(DEFAULTS, [
-  {ip, "127.0.0.1"},
-  {port, 6379},
-  {db, 0},
-  {pass, <<>>}
-]).
+
+-record(state, {
+  ip = "127.0.0.1",
+  port = 6379,
+  db = 0,
+  pass = <<>>,
+  socket = undefined
+}).
 
 %%====================================================================
 %% api callbacks
 %%====================================================================
-start_link(PropList) ->
-  PropList1 = set_defaults(?DEFAULTS, PropList),
-  Result = gen_server:start_link({local, ?MODULE}, ?MODULE, PropList1, []),
-  case Result of
-    {ok, _Pid} ->
-      case q([auth, proplists:get_value(pass, PropList1)]) of
-        {ok, _} ->
-          q([select, proplists:get_value(db, PropList1)]);
-        Error ->
-          Error
-      end;
-    Error ->
-      Error
-  end.
+start_link(Opts) ->
+  gen_server:start_link({local, ?MODULE}, ?MODULE, Opts, []).
 
 q(Parts) ->
   gen_server:call(?MODULE, {q, Parts}).
@@ -63,16 +53,7 @@ keys(Pat) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init(Opts) ->
-  Ip = proplists:get_value(ip, Opts),
-  Port = proplists:get_value(port, Opts),
-  SocketOpts = [binary, {packet, line}, {active, false}, {recbuf, 1024}],
-  Result = gen_tcp:connect(Ip, Port, SocketOpts),
-  case Result of
-    {ok, Socket} ->
-      {ok, Socket};
-    Error ->
-      {stop, Error}
-  end.
+  {ok, parse_options(Opts)}.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -83,15 +64,23 @@ init(Opts) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
-handle_call({q, Parts}, _From, Socket) ->
-  ToSend = build_request(Parts),
-  Result = case gen_tcp:send(Socket, ToSend) of
-    ok ->
-      read_resp(Socket);
+handle_call({q, Parts}, _From, State) ->
+  case connect(State) of
+    {ok, Socket} ->
+      case send(Parts, Socket) of
+        ok ->
+          case read_resp(Socket) of
+            {xerror, Error} ->
+              {reply, Error, State#state{socket = undefined}};
+            Response ->
+              {reply, Response, State#state{socket = Socket}}
+          end;
+        Error ->
+          {reply, Error, State#state{socket = undefined}}
+      end;
     Error ->
-      Error
-  end,
-  {reply, Result, Socket}.
+      {reply, Error, State#state{socket = undefined}}
+  end.
 
 %%--------------------------------------------------------------------
 %% Function: handle_cast(Msg, State) -> {noreply, State} |
@@ -131,16 +120,31 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
-set_default({Prop, Value}, PropList) ->
-  case proplists:is_defined(Prop, PropList) of
-    true ->
-      PropList;
-    false ->
-      [{Prop, Value} | PropList]
-  end.
 
-set_defaults(Defaults, PropList) ->
-  lists:foldl(fun set_default/2, PropList, Defaults).
+parse_options(Opts) ->
+  parse_options(Opts, #state{}).
+parse_options([], State) ->
+  State;
+parse_options([{ip, Ip} | Rest], State) ->
+  parse_options(Rest, State#state{ip = Ip});
+parse_options([{port, Port} | Rest], State) ->
+  parse_options(Rest, State#state{port = Port});
+parse_options([{db, Db} | Rest], State) ->
+  parse_options(Rest, State#state{db = Db});
+parse_options([{pass, Pass} | Rest], State) ->
+  parse_options(Rest, State#state{pass = Pass}).
+
+connect(State = #state{socket=undefined, ip=Ip, port=Port}) ->
+  io:format("CONNECTING! ~p~n", [State]),
+  Opts = [binary, {active, false}],
+  gen_tcp:connect(Ip, Port, Opts);
+connect(#state{socket = Socket}) ->
+  {ok, Socket}.
+
+send(Parts, Socket) ->
+  io:format("SENDING: ~p~n", [Parts]),
+  ToSend = build_request(Parts),
+  gen_tcp:send(Socket, ToSend).
 
 strip(B) when is_binary(B) ->
   S = size(B) - size(?NL),
@@ -170,7 +174,7 @@ read_resp(Socket) ->
           {unknown, Uknown}
       end;
     Error ->
-      Error
+      {xerror, Error}
   end.
 
 read_body(_Socket, -1) ->
