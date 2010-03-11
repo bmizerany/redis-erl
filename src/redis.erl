@@ -135,14 +135,12 @@ parse_options([{pass, Pass} | Rest], State) ->
   parse_options(Rest, State#state{pass = Pass}).
 
 connect(State = #state{socket=undefined, ip=Ip, port=Port}) ->
-  io:format("CONNECTING! ~p~n", [State]),
   Opts = [binary, {active, false}],
   gen_tcp:connect(Ip, Port, Opts);
 connect(#state{socket = Socket}) ->
   {ok, Socket}.
 
 send(Parts, Socket) ->
-  io:format("SENDING: ~p~n", [Parts]),
   ToSend = build_request(Parts),
   gen_tcp:send(Socket, ToSend).
 
