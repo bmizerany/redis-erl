@@ -38,8 +38,12 @@ q(Parts) ->
 %% Generic Sugar
 %%
 keys(Pat) ->
-  {ok, Data} = q([keys, Pat]),
-  re:split(Data, " ").
+  case q([keys, Pat]) of
+    {ok, Data} ->
+      re:split(Data, " ");
+    Error ->
+      Error
+  end.
 
 %%====================================================================
 %% gen_server callbacks
