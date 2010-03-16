@@ -74,7 +74,7 @@ handle_call({q, Parts}, _From, State) ->
       case send(Parts, Socket) of
         ok ->
           case read_resp(Socket) of
-            {xerror, Error} ->
+            {server_error, Error} ->
               {reply, Error, State#state{socket = undefined}};
             Response ->
               {reply, Response, State#state{socket = Socket}}
@@ -176,7 +176,7 @@ read_resp(Socket) ->
           {unknown, Uknown}
       end;
     Error ->
-      {xerror, Error}
+      {server_error, Error}
   end.
 
 read_body(_Socket, -1) ->
